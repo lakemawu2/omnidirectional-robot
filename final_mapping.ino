@@ -1,5 +1,4 @@
 //Used example code from PS2 Library and Kiwi control code from Make.com 
-
 #include <PS2X_lib.h> //PS2 Library can be found here: 
 #include <Servo.h> //Servo Library go to Sketch --> Include Library --> Servo
 #include <math.h> //Already on computer (no library download needed)
@@ -10,60 +9,92 @@ Servo motorB; //^^
 Servo motorC; //^^
 
 int error = 0; 
-int pos = 0;    //"pos" is the variable for servo position
 byte type = 0; 
 byte vibrate = 0; //only need this if you plane to include vibration wire
 
-void setup() {
+void setup() {w1
+  Serial.begin(57600); //baud rate needs to be set to 57600
   motorA.attach(9); //tells arduino which pin you connected the signal (white) wire on the motor controller to
   motorB.attach(6); //^^^^ format --> servo.attach(pin)
   motorC.attach(3); //^^^^
-  error = ps2x.config_gamepad(12,11,10,13,false, false); //setup pins (in this order) and settings:  GamePad(clock, command, attention, data, Pressures, Rumble)
+  error = ps2x.config_gamepad(12,11,10,13,true, true); //setup pins (in this order) and settings:  GamePad(clock, command, attention, data, Pressures, Rumble)
                             //^^^^^^^^^^^^^^^^^^^^^^^^ make sure you double check this! Use _____ to configure arduino to PS2 controller
+  pinMode(9, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(3, OUTPUT);
+
+  if(error == 0){
+    Serial.println("Found Controller, configured successful");
+    Serial.println("HOLDING L1 or R1 will print out the ANALOG STICK values.");
+    Serial.println("www.billporter.info for updates and to report bugs.");
+  }
+  
+  else if(error == 1)
+    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+  else if(error == 2)
+    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+  else if(error == 3)
+    Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
+
   type = ps2x.readType(); 
-  Serial.begin(57600); //baud rate needs to be set to 57600
+  switch(type) {
+  case 0:
+    Serial.println("Unknown Controller type");
+    break;
+  case 1:
+    Serial.println("DualShock Controller Found");
+    break;
   }
+}
+
 void loop() {
-  ps2x.read_gamepad(); //read controller
-  if(error == 1) //skip loop if no controller found
-  { 
-   Serial.println("No Controller Found"); //can be changed to anything, Serial.println puts words on serial monitor (Tools
-   return;
+    if(error == 1){ //skip loop if no controller found
+    return; 
+  } 
+    else { //DualShock Controller Found
+   ps2x.read_gamepad(false, vibrate);     
+   vibrate = ps2x.Analog(PSAB_RED);      
   }
-int xval=ps2x.Analog(PSS_LX); //find lxval on serial monitor
-int yval=ps2x.Analog(PSS_LY); //find lyval on serial monitor
-int xmap=map(xval,0,255,100,-100);
-int ymap=map(yval,0,255,100,-100);
+  
+int steerval = ps2x.Analog(PSS_RX);
+int xval = ps2x.Analog(PSS_LX); //find lxval on serial monitor
+int yval = ps2x.Analog(PSS_LY); //find lyval on serial monitor
+int xmap = map(xval,0,255,2000,1000); //convert PS2 range to 1000 to 2000
+int ymap = map(yval,0,255,2000,1000);
+
 //navagtion
-float theta = atan2(xmap, ymap);
-float magnitude = sqrt((xmap*xmap)+(ymap*ymap));
-  // magnitudes less than about 50 are neutral stick positions and should probably just be ignored
- 
- if(magnitude > 75.0f){  // ???  //if doesnt work, change to --> if(ps2x.Analog(PSS_RX)==     {    
-    Serial.print("xmap: ");
-    Serial.print(xmap);
-    Serial.print("ymap: ");
-    Serial.print(ymap);
-  
-    Serial.print(" Angle: ");
-    Serial.print(degrees(theta));
-  
-    Serial.print(" Magnitude: ");
-    Serial.print(magnitude);  
-    
-    float vectorx = magnitude * cos(theta);
-    float vectory = magnitude * sin(theta);
+
+float theta = atan2(xmap,ymap);
+float WSlength = sqrt((xmap*xmap)+(ymap*ymap));
+   
+    float vectorx = WSlength * cos(theta);
+    float vectory = WSlength * sin(theta);
     const float sqrt3o2 = 1.0*sqrt(3)/2;
 
-    float w0 = -vectorx;                   // v dot [-1, 0] / 25mm
-    float w1 = 0.5*vectorx - sqrt3o2 * vectory; // v dot [1/2, -sqrt(3)/2] / 25mm
-    float w2 = 0.5*vectorx + sqrt3o2 * vectory; // v dot [1/2, +sqrt(3)/2] / 25mm
+    float wa = -vectorx;                   // v dot [-1, 0] / 25mm
+    float wb = 0.5*vectorx - sqrt3o2 * vectory; // v dot [1/2, -sqrt(3)/2] / 25mm
+    float wc = 0.5*vectorx + sqrt3o2 * vectory; // v dot [1/2, +sqrt(3)/2] / 25mm
+    
+int vectora=map(wa,-142,142,1000,2000); //-142 and 142 are limits of calculations above (should be)
+int vectorb=map(wb,-142,142,1000,2000);
+int vectorc=map(wc,-142,142,1000,2000);
 
-         
-  motorA.writeMicroseconds(w0);  
-  motorB.writeMicroseconds(w1);  
-  motorC.writeMicroseconds(w2); 
-   /*
+ if(steerval==128){        
+  motorA.writeMicroseconds(vectora);  //make sure this means clockwise and counter clockwise
+  motorB.writeMicroseconds(vectorb);  //maybe add map function (set function limits)
+  motorC.writeMicroseconds(vectorc); 
+  delay(10);
+ }
+ 
+ if(xval==127 && yval==128){ 
+  motorA.writeMicroseconds(map(steerval,0,255,2000,1000));
+  motorB.writeMicroseconds(map(steerval,0,255,2000,1000));
+  motorC.writeMicroseconds(map(steerval,0,255,2000,1000));
+  delay(10);
+ }
+
+ 
+/*
     boolean w0_ccw = w0 < 0 ? true : false;
     boolean w1_ccw = w1 < 0 ? true : false;
     boolean w2_ccw = w2 < 0 ? true : false;
@@ -84,25 +115,17 @@ float magnitude = sqrt((xmap*xmap)+(ymap*ymap));
     Serial.print(" w2: ");
     Serial.print(w2_speed);
     if(w2_ccw) Serial.print(" CCW"); else Serial.print(" CW");  
-    Serial.println();
-*/}
+    Serial.println(); 
+    
     else{
      motorA.write(90); // try servo.detach too 
      motorB.write(90);
      motorC.write(90);
      delay(10);
     }
-    /*
-if(lxval== && lyval==){
-motorA.writeMicroseconds(map(ps2x.Analog(PSS_RX),0,255,2000,1000));
-motorB.writeMicroseconds(map(ps2x.Analog(PSS_RX),0,255,2000,1000));
-motorC.writeMicroseconds(map(ps2x.Analog(PSS_RX),0,255,2000,1000));
-delay(10)
-} ^^ find values on the serial monitor
 */
-    }
- 
+  delay(50);   
+}
    
   
     
-
