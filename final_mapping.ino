@@ -12,7 +12,7 @@ int error = 0;
 byte type = 0; 
 byte vibrate = 0; //only need this if you plane to include vibration wire
 
-void setup() {w1
+void setup() {
   Serial.begin(57600); //baud rate needs to be set to 57600
   motorA.attach(9); //tells arduino which pin you connected the signal (white) wire on the motor controller to
   motorB.attach(6); //^^^^ format --> servo.attach(pin)
