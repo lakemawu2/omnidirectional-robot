@@ -12,16 +12,16 @@ byte type = 0;
 byte vibrate = 0;
 
 void setup(){  
-  Serial.begin(57600);
-  motorA.attach(9);  // attaches the servo on pin 3 to the servo object  //copy from servo code
-  motorB.attach(6);  // attaches the servo on pin 5 to the servo object  mjyt65
-  motorC.attach(3);  // attaches the servo on pin 6 to the servo object
+  Serial.begin(57600); //baud rate must be 57600 to communicate w/ reciever
+  motorA.attach(9);  
+  motorB.attach(6);  
+  motorC.attach(3);  
   
   pinMode(9, OUTPUT);
   pinMode(6, OUTPUT);
   pinMode(3, OUTPUT);
   
-  error = ps2x.config_gamepad(12,11,10,13, true, false);   //setup pins (in this order) and settings:  GamePad(clock, command, attention, data, Pressures, Rumble)
+  error = ps2x.config_gamepad(12,11,10,13, true, false);   //setup pins (in this order) and settings: ps2x.GamePad(clock, command, attention, data, Pressures, Rumble)
    
   if(error == 0){
     Serial.println("Found Controller, configured successful");
