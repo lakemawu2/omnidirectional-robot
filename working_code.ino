@@ -21,7 +21,7 @@ void setup(){
   pinMode(6, OUTPUT);
   pinMode(3, OUTPUT);
   
-  error = ps2x.config_gamepad(12,11,10,13, true, false);   //setup pins (in this order) and settings: ps2x.GamePad(clock, command, attention, data, Pressures, Rumble)
+  error = ps2x.config_gamepad(12,11,10,13, true, true);   //setup pins (in this order) and settings: ps2x.GamePad(clock, command, attention, data, Pressures, Rumble)
    
   if(error == 0){
     Serial.println("Found Controller, configured successful");
@@ -53,16 +53,23 @@ void loop(){
     return; 
   } else { //DualShock Controller Found
     ps2x.read_gamepad(false, vibrate);      //sets vibration motor in PS2 controller to speed based on how hard you press the button
-   vibrate = ps2x.Analog(PSAB_RED);     
+   vibrate = ps2x.Analog(PSAB_BLUE);     
   }
-
+if(ps2x.Button(PSB_RED)){
+  Serial.println("OFF");
+  digitalWrite(7, LOW);
+}
+if(ps2x.Button(PSB_GREEN)){
+  Serial.println("ON");
+  digitalWrite(7, HIGH);
+}  
   int val=ps2x.Analog(PSS_RX); // reads the value of RX on the the PS2 receiver (value between 0 and 255) 
   int mapval=map(val,0,255,2000,1000); //reads val, creates a mapval integer between 1000 and 2000 that motor controller reads
   
   int x=ps2x.Analog(PSS_LX); // reads the value of LX on the the PS2 receiver (value between 0 and 255) 
   int y=ps2x.Analog(PSS_LY); // reads the value of LY on the the PS2 receiver (value between 0 and 255) 
 
-  if(x==128 && y==127){
+ if(x==128 && y==127){
     motorA.writeMicroseconds(mapval);  //stationary rotation
     motorB.writeMicroseconds(mapval); 
     motorC.writeMicroseconds(mapval);  
@@ -72,7 +79,7 @@ void loop(){
   int mapx=map(x,0,255,100,-100);
   int mapy=map(y,0,255,100,-100); //values from PS2 controller are read from 0-255, read as 100 to -100 value to represent a cartesian plane with a 0 in the center to simplify calculations.
   
-  float theta= atan2(mapx,mapy); // arc tangent of x/y
+  float theta= atan2(mapx,mapy); // 
  
   int hyp=sqrt(mapx*mapx+mapy*mapy);  //Pythagorean theorem
     
@@ -80,7 +87,7 @@ void loop(){
   float cosb=hyp*cos(30*M_PI/180-theta);  //
   float cosc=hyp*cos(270*M_PI/180-theta); //
   
-  int Fa=map(cosa,-142,142,1000,2000); //-142 and 142 are limits of calculations above (should be)
+  int Fa=map(cosa,-142,142,1000,2000); //
   int Fb=map(cosb,-142,142,1000,2000);
   int Fc=map(cosc,-142,142,1000,2000);
 
