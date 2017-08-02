@@ -55,14 +55,7 @@ void loop(){
     ps2x.read_gamepad(false, vibrate);      //sets vibration motor in PS2 controller to speed based on how hard you press the button
    vibrate = ps2x.Analog(PSAB_BLUE);     
   }
-if(ps2x.Button(PSB_RED)){
-  Serial.println("OFF");
-  digitalWrite(7, LOW);
-}
-if(ps2x.Button(PSB_GREEN)){
-  Serial.println("ON");
-  digitalWrite(7, HIGH);
-}  
+
   int val=ps2x.Analog(PSS_RX); // reads the value of RX on the the PS2 receiver (value between 0 and 255) 
   int mapval=map(val,0,255,2000,1000); //reads val, creates a mapval integer between 1000 and 2000 that motor controller reads
   
